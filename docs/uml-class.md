@@ -25,6 +25,11 @@ classDiagram
         +String reason
         +DateTime createdAt
     }
+    class Restock {
+        +Decimal quantity
+        +Decimal cost
+        +DateTime createdAt
+    }
     class AppUser {
         +String username
         +String role
@@ -35,5 +40,6 @@ classDiagram
     Order "1" --> "*" OrderItem
     Recipe "1" --> "*" OrderItem
     Ingredient "1" --> "*" StockMovement
+    Ingredient "1" --> "*" Restock
     AppUser "0..1" --> "*" Order
 ```

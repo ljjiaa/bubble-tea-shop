@@ -33,8 +33,15 @@ erDiagram
     stock_movement {
         int id PK
         int ingredient_id FK
-        decimal change_amount "＋in / －out"
+        decimal change_amount "+ in / - out"
         string reason
+        datetime created_at
+    }
+    restock {
+        int id PK
+        int ingredient_id FK
+        decimal quantity "amount restocked"
+        decimal cost "amount paid"
         datetime created_at
     }
     app_user {
@@ -48,5 +55,6 @@ erDiagram
     order ||--o{ order_item : "contains"
     recipe ||--o{ order_item : "ordered as"
     ingredient ||--o{ stock_movement : "tracked by"
+    ingredient ||--o{ restock : "restocked by"
     app_user ||--o{ order : "places"
 ```

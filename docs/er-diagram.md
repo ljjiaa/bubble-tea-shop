@@ -22,7 +22,6 @@ erDiagram
         int customer_id FK "nullable = guest"
         string status
         string payment_method
-        string currency
         datetime created_at
     }
     order_item {

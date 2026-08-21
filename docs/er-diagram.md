@@ -17,7 +17,7 @@ erDiagram
         int ingredient_id FK
         decimal quantity_used
     }
-    order {
+    orders {
         int id PK
         int customer_id FK "nullable = guest"
         string status
@@ -34,14 +34,8 @@ erDiagram
         int id PK
         int ingredient_id FK
         decimal change_amount "+ in / - out"
-        string reason
-        datetime created_at
-    }
-    restock {
-        int id PK
-        int ingredient_id FK
-        decimal quantity "amount restocked"
-        decimal cost "amount paid"
+        decimal cost "nullable, restock only"
+        string reason "initial/restock/sale/wastage"
         datetime created_at
     }
     app_user {
@@ -52,9 +46,8 @@ erDiagram
     }
     recipe ||--o{ recipe_ingredient : "has"
     ingredient ||--o{ recipe_ingredient : "used in"
-    order ||--o{ order_item : "contains"
+    orders ||--o{ order_item : "contains"
     recipe ||--o{ order_item : "ordered as"
     ingredient ||--o{ stock_movement : "tracked by"
-    ingredient ||--o{ restock : "restocked by"
-    app_user ||--o{ order : "places"
+    app_user ||--o{ orders : "places"
 ```

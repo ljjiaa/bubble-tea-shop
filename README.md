@@ -24,4 +24,4 @@ is tracked as a ledger of movements.
 
 ## Status
 Week 1 — still on planning and design (diagrams, schema, tech stack).
-Week 2 - 
+Week 2 -  

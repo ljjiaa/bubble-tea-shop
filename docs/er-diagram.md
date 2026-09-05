@@ -10,6 +10,7 @@ erDiagram
         int id PK
         string name
         decimal price
+        boolean is_active
     }
     recipe_ingredient {
         int id PK

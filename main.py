@@ -4,6 +4,9 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from psycopg.errors import ForeignKeyViolation
+from passlib.context import CryptContext
+from jose import jwt
+from datetime import datetime, timedelta
 
 load_dotenv()
 
@@ -38,6 +41,18 @@ class RecipeOut(BaseModel):
     price: float
     is_active: bool
 
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+SECRET_KEY = os.getenv("SECRET_KEY")
+ALGORITHM = "HS256"
+
+class LoginIn(BaseModel):
+    username: str
+    password: str
+
+class TokenOut(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
 
 #---------------------- Ingredient endpoints ----------------------
 
@@ -167,3 +182,24 @@ def delete_recipe(recipe_id: int):
     conn.close()
     if deleted == 0:
         raise HTTPException(status_code=404, detail="Recipe not found")
+    
+
+#---------------------- Auth ----------------------
+
+@app.post("/auth/login", response_model=TokenOut)
+def login(credentials: LoginIn):
+    conn = psycopg.connect(os.getenv("DATABASE_URL"))
+    with conn.cursor() as cur:
+        cur.execute("SELECT id, password_hash, role FROM app_users WHERE username = %s", (credentials.username,))
+        row = cur.fetchone()
+    conn.close()
+
+    if row is None or not pwd_context.verify(credentials.password, row[1]):
+        raise HTTPException(status_code=401, detail="Invalid username or password")
+
+    token = jwt.encode(
+        {"sub": credentials.username, "role": row[2], "exp": datetime.utcnow() + timedelta(hours=8)},
+        SECRET_KEY,
+        algorithm=ALGORITHM,
+    )
+    return {"access_token": token}

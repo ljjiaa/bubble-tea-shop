@@ -64,7 +64,6 @@ def update_ingredient(ingredient_id: int, ingredient: IngredientIn):
     conn.commit()
     conn.close()
     if row is None:
-        from fastapi import HTTPException
         raise HTTPException(status_code=404, detail="Ingredient not found")
     return {"id": row[0], "name": row[1], "unit": row[2], "reorder_threshold": float(row[3])}
 

@@ -54,6 +54,27 @@ class TokenOut(BaseModel):
     access_token: str
     token_type: str = "bearer"
 
+# ==================== OrderIn, OrderOut ====================
+
+class OrderItemIn(BaseModel):
+    recipe_id: int
+    quantity: int
+
+class OrderIn(BaseModel):
+    items: list[OrderItemIn]
+
+class OrderItemOut(BaseModel):
+    recipe_id: int
+    quantity: int
+
+class OrderOut(BaseModel):
+    id: int
+    status: str
+    payment_method: str
+    created_at: str
+    items: list[OrderItemOut]
+
+
 #---------------------- Ingredient endpoints ----------------------
 
 # Confirms the API is up and can reach the database
@@ -203,3 +224,49 @@ def login(credentials: LoginIn):
         algorithm=ALGORITHM,
     )
     return {"access_token": token}
+
+
+#---------------------- Sales ----------------------
+
+# Records a sale: creates order + items, deducts stock, logs movements.
+# All in one transaction — if anything fails, everything rolls back.
+@app.post("/orders", response_model=OrderOut, status_code=201)
+def create_order(order: OrderIn):
+    conn = psycopg.connect(os.getenv("DATABASE_URL"))
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                "INSERT INTO orders (status, payment_method) VALUES ('pending', 'cash') RETURNING id, status, payment_method, created_at"
+            )
+            order_id, status, payment_method, created_at = cur.fetchone()
+
+            for item in order.items:
+                cur.execute(
+                    "INSERT INTO order_items (order_id, recipe_id, quantity) VALUES (%s, %s, %s)",
+                    (order_id, item.recipe_id, item.quantity),
+                )
+
+                cur.execute(
+                    "SELECT ingredient_id, quantity_used FROM recipe_ingredients WHERE recipe_id = %s",
+                    (item.recipe_id,),
+                )
+                for ingredient_id, quantity_used in cur.fetchall():
+                    deduct = float(quantity_used) * item.quantity
+                    cur.execute(
+                        "INSERT INTO stock_movements (ingredient_id, order_id, change_amount, reason) VALUES (%s, %s, %s, 'sale')",
+                        (ingredient_id, order_id, -deduct),
+                    )
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+    return {
+        "id": order_id,
+        "status": status,
+        "payment_method": payment_method,
+        "created_at": str(created_at),
+        "items": [{"recipe_id": i.recipe_id, "quantity": i.quantity} for i in order.items],
+    }

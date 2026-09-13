@@ -5,6 +5,7 @@ erDiagram
         string name
         string unit
         decimal reorder_threshold
+        decimal cost_per_unit "nullable"
     }
     recipe {
         int id PK
@@ -34,10 +35,19 @@ erDiagram
     stock_movement {
         int id PK
         int ingredient_id FK
+        int order_id FK "nullable, sale only"
         decimal change_amount "+ in / - out"
         decimal cost "nullable, restock only"
         string reason "initial/restock/sale/wastage"
+        string type "nullable, supplier/manual"
         datetime created_at
+    }
+    stock_snapshot {
+        int id PK
+        int ingredient_id FK
+        date snapshot_date
+        decimal opening_qty
+        decimal closing_qty
     }
     app_user {
         int id PK
@@ -50,5 +60,7 @@ erDiagram
     orders ||--o{ order_item : "contains"
     recipe ||--o{ order_item : "ordered as"
     ingredient ||--o{ stock_movement : "tracked by"
+    orders ||--o{ stock_movement : "causes"
+    ingredient ||--o{ stock_snapshot : "tracked daily by"
     app_user ||--o{ orders : "places"
 ```
